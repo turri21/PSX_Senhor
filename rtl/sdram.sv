@@ -93,7 +93,7 @@ localparam BURST_LENGTH        = 8;
 // as bursts of 2 can be done back-to-back, this does not have any latency or bandwidth penalty compared to full 8 word burst
 localparam BURST_CODE          = 3'b001;   
 localparam ACCESS_TYPE         = 1'b0;     // 0=sequential, 1=interleaved
-localparam CAS_LATENCY         = 3'd2;     // 2 for < 100MHz, 3 for >100MHz
+localparam CAS_LATENCY         = 3'd3;     // 2 for < 100MHz, 3 for >100MHz - Senhor: Using 3 instead of 2 (default) 
 localparam OP_MODE             = 2'b00;    // only 00 (standard operation) allowed
 localparam NO_WRITE_BURST      = 1'b1;     // 0= write burst enabled, 1=only single access write
 localparam MODE                = {3'b000, NO_WRITE_BURST, OP_MODE, CAS_LATENCY, ACCESS_TYPE, BURST_CODE};
