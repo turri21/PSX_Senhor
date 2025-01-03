@@ -1,7 +1,3 @@
--=(PSX_Senhor notes)=-
-
-Tested: Working Video 720p, 1080p & Sound
-
 # [Playstation](https://en.wikipedia.org/wiki/PlayStation_(console)) for [MiSTer Platform](https://github.com/MiSTer-devel/Main_MiSTer/wiki)
 
 ## Hardware Requirements
