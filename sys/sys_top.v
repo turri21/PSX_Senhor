@@ -214,7 +214,7 @@ always @(posedge FPGA_CLK2_50) begin
 	reg btn_up = 0;
 	reg btn_en = 0;
 
-//	btn_up <= BTN_RESET & BTN_OSD & BTN_USER;
+	btn_up <= BTN_RESET & BTN_OSD & BTN_USER;
 	if(~reset & btn_up & ~&btn_timeout) btn_timeout <= btn_timeout + 1'd1;
 	btn_en <= ~BTN_DIS;
 	BTN_EN <= &btn_timeout & btn_en;
@@ -234,11 +234,11 @@ always @(posedge FPGA_CLK2_50) begin
 	if(div > 100000) div <= 0;
 
    if(!div) begin
-//		deb_user <= {deb_user[6:0], btn_u | ~KEY[0]};  //MiSTer: ~KEY[1] Senhor: Buttons are switched for convenience.
+		deb_user <= {deb_user[6:0], btn_u | ~KEY[0]};  //MiSTer: ~KEY[1] Senhor: Buttons are switched for convenience.
 		if(&deb_user) btn_user <= 1;
 		if(!deb_user) btn_user <= 0;
 
-//		deb_osd <= {deb_osd[6:0], btn_o | ~KEY[1]}; //MiSTer: ~KEY[0] Senhor: Buttons are switched for convenience.
+		deb_osd <= {deb_osd[6:0], btn_o | ~KEY[1]}; //MiSTer: ~KEY[0] Senhor: Buttons are switched for convenience.
 		if(&deb_osd) btn_osd <= 1;
 		if(!deb_osd) btn_osd <= 0;
 	end
@@ -1269,8 +1269,8 @@ altddio_out
 )
 hdmiclk_ddr
 (
-	.datain_h(1'b0),
-	.datain_l(1'b1),
+	.datain_h(1'b1),
+	.datain_l(1'b0),
 	.outclock(hdmi_tx_clk),
 	.dataout(HDMI_TX_CLK),
 	.aclr(1'b0),
