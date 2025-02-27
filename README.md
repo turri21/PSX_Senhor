@@ -2,7 +2,6 @@
 
 Tested: Working Video 720p, 1080p & Sound
 
-Dev notes: In rtl/sdram.sv line 96 ---> localparam CAS_LATENCY         = 3'd3;     // 2 for < 100MHz, 3 for >100MHz - Senhor: Using 3 instead of 2 (default) 
 ___
 # [Playstation](https://en.wikipedia.org/wiki/PlayStation_(console)) for [MiSTer Platform](https://github.com/MiSTer-devel/Main_MiSTer/wiki)
 
