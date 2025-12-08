@@ -46,70 +46,70 @@ module sys_top
 	//////////// SDR ///////////
 	output [12:0] SDRAM_A,
 	inout  [15:0] SDRAM_DQ,
-	output        SDRAM_DQML,
-	output        SDRAM_DQMH,
+//	output        SDRAM_DQML,
+//	output        SDRAM_DQMH,
 	output        SDRAM_nWE,
 	output        SDRAM_nCAS,
 	output        SDRAM_nRAS,
 	output        SDRAM_nCS,
 	output  [1:0] SDRAM_BA,
 	output        SDRAM_CLK,
-	output        SDRAM_CKE,
+//	output        SDRAM_CKE,
 
-`ifdef MISTER_DUAL_SDRAM
+`ifdef DUAL_SDRAM
 	////////// SDR #2 //////////
-	output [12:0] SDRAM2_A,
-	inout  [15:0] SDRAM2_DQ,
-	output        SDRAM2_nWE,
-	output        SDRAM2_nCAS,
-	output        SDRAM2_nRAS,
-	output        SDRAM2_nCS,
-	output  [1:0] SDRAM2_BA,
-	output        SDRAM2_CLK,
+//	output [12:0] SDRAM2_A,
+//	inout  [15:0] SDRAM2_DQ,
+//	output        SDRAM2_nWE,
+//	output        SDRAM2_nCAS,
+//	output        SDRAM2_nRAS,
+//	output        SDRAM2_nCS,
+//	output  [1:0] SDRAM2_BA,
+//	output        SDRAM2_CLK,
 
 `else
 	//////////// VGA ///////////
-	output  [5:0] VGA_R,
-	output  [5:0] VGA_G,
-	output  [5:0] VGA_B,
-	inout         VGA_HS,
-	output		  VGA_VS,
-	input         VGA_EN,  // active low
+//	output  [5:0] VGA_R,
+//	output  [5:0] VGA_G,
+//	output  [5:0] VGA_B,
+//	inout         VGA_HS,  // VGA_HS is secondary SD card detect when VGA_EN = 1 (inactive)
+//	output		  VGA_VS,
+//	input         VGA_EN,  // active low
 
 	/////////// AUDIO //////////
-	output		  AUDIO_L,
-	output		  AUDIO_R,
-	output		  AUDIO_SPDIF,
+//	output		  AUDIO_L,
+//	output		  AUDIO_R,
+//	output		  AUDIO_SPDIF,
 
 	//////////// SDIO ///////////
-	inout   [3:0] SDIO_DAT,
-	inout         SDIO_CMD,
-	output        SDIO_CLK,
+//	inout   [3:0] SDIO_DAT,
+//	inout         SDIO_CMD,
+//	output        SDIO_CLK,
 
 	//////////// I/O ///////////
-	output        LED_USER,
-	output        LED_HDD,
-	output        LED_POWER,
-	input         BTN_USER,
-	input         BTN_OSD,
-	input         BTN_RESET,
+//	output        LED_USER,
+//	output        LED_HDD,
+//	output        LED_POWER,
+//	input         BTN_USER,
+//	input         BTN_OSD,
+//	input         BTN_RESET,
 `endif
 
 	////////// I/O ALT /////////
-	output        SD_SPI_CS,
-	input         SD_SPI_MISO,
-	output        SD_SPI_CLK,
-	output        SD_SPI_MOSI,
-
-	inout         SDCD_SPDIF,
-	output        IO_SCL,
-	inout         IO_SDA,
+//	output        SD_SPI_CS,
+//	input         SD_SPI_MISO,
+//	output        SD_SPI_CLK,
+//	output        SD_SPI_MOSI,
+//
+//	inout         SDCD_SPDIF,
+//	output        IO_SCL,
+//	inout         IO_SDA,
 
 	////////// ADC //////////////
-	output        ADC_SCK,
-	input         ADC_SDO,
-	output        ADC_SDI,
-	output        ADC_CONVST,
+//	output        ADC_SCK,
+//	input         ADC_SDO,
+//	output        ADC_SDI,
+//	output        ADC_CONVST,
 
 	////////// MB KEY ///////////
 	input   [1:0] KEY,
@@ -118,11 +118,29 @@ module sys_top
 	input   [3:0] SW,
 
 	////////// MB LED ///////////
-	output  [7:0] LED,
+	output  [7:0] LED
 
 	///////// USER IO ///////////
-	inout   [6:0] USER_IO
+//	inout   [6:0] USER_IO
 );
+
+///////////////////////// Senhor: Initializations ////////////////////////
+
+wire [5:0] VGA_R;
+wire [5:0] VGA_G;
+wire [5:0] VGA_B;
+wire VGA_HS;
+wire VGA_VS;
+wire VGA_EN = 1'b1;
+
+wire [3:0] SDIO_DAT;
+wire SDIO_CMD = 1'b1;
+wire [6:0] USER_IO;
+wire SD_SPI_MISO = 1'b1;
+
+wire BTN_RESET = 1'b1, BTN_OSD = 1'b1, BTN_USER = 1'b1;
+
+/////////////////////////////////////////////////////////////////////////
 
 //////////////////////  Secondary SD  ///////////////////////////////////
 wire SD_CS, SD_CLK, SD_MOSI, SD_MISO, SD_CD;
@@ -217,11 +235,11 @@ always @(posedge FPGA_CLK2_50) begin
 	if(div > 100000) div <= 0;
 
 	if(!div) begin
-		deb_user <= {deb_user[6:0], btn_u | ~KEY[1]};
+		deb_user <= {deb_user[6:0], btn_u | ~KEY[0]};
 		if(&deb_user) btn_user <= 1;
 		if(!deb_user) btn_user <= 0;
 
-		deb_osd <= {deb_osd[6:0], btn_o | ~KEY[0]};
+		deb_osd <= {deb_osd[6:0], btn_o | ~KEY[1]};
 		if(&deb_osd) btn_osd <= 1;
 		if(!deb_osd) btn_osd <= 0;
 	end
@@ -395,7 +413,6 @@ always@(posedge clk_sys) begin
 `ifndef MISTER_DEBUG_NOHDMI
 			if(io_din[7:0] == 'h40) io_dout_sys <= fb_crc;
 `endif
-			if(io_din[7:0] == 'h42) io_dout_sys <= {1'b1, frame_cnt};
 		end
 		else begin
 			cnt <= cnt + 1'd1;
@@ -503,20 +520,22 @@ always@(posedge clk_sys) begin
 			end
 `endif
 			if(cmd == 'h41) begin
-				case(cnt[3:0])
 `ifndef MISTER_DISABLE_YC
+				case(cnt[3:0])
 					0: {pal_en,cvbs,yc_en}    <= io_din[2:0];
 					4: ColorBurst_Range[15:0] <= io_din;
 					5: ColorBurst_Range[16]   <= io_din[0];
+				endcase
 `endif
+`ifndef MISTER_DUAL_SDRAM
+				case(cnt[3:0])
 					// Subcarrier commands (independent of YC module)
 					1: PhaseInc[15:0]         <= io_din;
 					2: PhaseInc[31:16]        <= io_din;
 					3: PhaseInc[39:32]        <= io_din[7:0];
-`ifndef MISTER_DUAL_SDRAM
-					6: subcarrier             <= io_din[0];
-`endif
+					6: subcarrier     		  <= io_din[0];
 				endcase
+`endif
 			end
 		end
 	end
@@ -534,15 +553,6 @@ always@(posedge clk_sys) begin
 
 	vs_d2 <= vs_d1;
 	if(~vs_d2 & vs_d1) vs_wait <= 0;
-end
-
-reg [7:0] frame_cnt;
-always @(posedge clk_sys) begin
-	reg vs_r, vs_old;
-	
-	vs_r <= vs_fix;
-	if(vs_r == vs_fix) vs_old <= vs_r;
-	if(~vs_old & vs_r) frame_cnt <= frame_cnt + 1'd1;
 end
 
 cyclonev_hps_interface_peripheral_uart uart
@@ -1269,8 +1279,8 @@ altddio_out
 )
 hdmiclk_ddr
 (
-	.datain_h(1'b0),
-	.datain_l(1'b1),
+	.datain_h(1'b1),
+	.datain_l(1'b0),
 	.outclock(hdmi_tx_clk),
 	.dataout(HDMI_TX_CLK),
 	.aclr(1'b0),
@@ -1409,39 +1419,38 @@ osd vga_osd
 wire vga_cs_osd;
 csync csync_vga(clk_vid, vga_hs_osd, vga_vs_osd, vga_cs_osd);
 
-`ifndef MISTER_DISABLE_YC
-	reg         pal_en;
-	reg         yc_en;
-	reg         cvbs;
-	reg  [16:0] ColorBurst_Range;
-	wire [23:0] yc_o;
-	wire        yc_hs, yc_vs, yc_cs, yc_de;
-
-	yc_out yc_out
-	(
-		.clk(clk_vid),
-		.PAL_EN(pal_en),
-		.CVBS(cvbs),
-		.PHASE_INC(PhaseInc),
-		.COLORBURST_RANGE(ColorBurst_Range),
-		.hsync(vga_hs_osd),
-		.vsync(vga_vs_osd),
-		.csync(vga_cs_osd),
-		.de(vga_de_osd),
-		.dout(yc_o),
-		.din(vga_data_osd),
-		.hsync_o(yc_hs),
-		.vsync_o(yc_vs),
-		.csync_o(yc_cs),
-		.de_o(yc_de)
-	);
-`endif
-
-reg  [39:0] PhaseInc;
-
 `ifndef MISTER_DUAL_SDRAM
+	`ifndef MISTER_DISABLE_YC
+		reg         pal_en;
+		reg         yc_en;
+		reg         cvbs;
+		reg  [16:0] ColorBurst_Range;
+		wire [23:0] yc_o;
+		wire        yc_hs, yc_vs, yc_cs, yc_de;
+
+		yc_out yc_out
+		(
+			.clk(clk_vid),
+			.PAL_EN(pal_en),
+			.CVBS(cvbs),
+			.PHASE_INC(PhaseInc),
+			.COLORBURST_RANGE(ColorBurst_Range),
+			.hsync(vga_hs_osd),
+			.vsync(vga_vs_osd),
+			.csync(vga_cs_osd),
+			.de(vga_de_osd),
+			.dout(yc_o),
+			.din(vga_data_osd),
+			.hsync_o(yc_hs),
+			.vsync_o(yc_vs),
+			.csync_o(yc_cs),
+			.de_o(yc_de)
+		);
+	`endif
+
 	// Subcarrier generation for external encoders (independent of YC module)
 	reg         subcarrier;
+	reg  [39:0] PhaseInc;
 
 	reg  [39:0] sub_accum;
 	always @(posedge clk_vid) sub_accum <= sub_accum + PhaseInc;
