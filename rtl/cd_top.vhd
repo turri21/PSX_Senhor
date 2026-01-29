@@ -716,23 +716,14 @@ begin
                end if;
             end if;
             
+            -- INT1 (Data Ready)
+            -- INT1 is always queued via pendingDriveIRQ to preserve hardware-like delay
+            -- and avoid INT1/INT3 race conditions (Burger Burger, Jikkyō '95),
+            -- while still guaranteeing delivery (Crime Crackers, Parodius).            
             if (ackRead = '1' or ackRead_data = '1') then            
-               if (CDROM_IRQFLAG = "00011") then
-                  -- INT3 active: do not overwrite it with INT1
-                  -- queue INT1 for later delivery
-                  if (pendingDriveIRQ = "00000") then
-                     pendingDriveIRQ      <= "00001";
-                     pendingDriveResponse <= internalStatus;
-                  end if;            
-               else
-                  if (CDROM_IRQFLAG /= "00000" and CDROM_IRQFLAG /= "00001") then
-                     pendingDriveIRQ <= CDROM_IRQFLAG;
-                  end if;           
-                  CDROM_IRQFLAG <= "00001";
-                  if (CDROM_IRQENA(0) = '1') then
-                     irqOut <= '1';
-                  end if;
-                  ackRead_valid <= '1';
+               if (pendingDriveIRQ /= "00001") then
+                  pendingDriveIRQ      <= "00001";
+                  pendingDriveResponse <= internalStatus;
                end if;            
             end if;
             
