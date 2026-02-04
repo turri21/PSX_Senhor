@@ -1088,35 +1088,56 @@ begin
                         cmdStop     <= '1';
                         
                      when x"09" => -- pause
-						-- Reject PAUSE while still seeking (first sector not delivered)
-						if (driveState = DRIVE_SEEKLOGICAL or driveState = DRIVE_SEEKPHYSICAL or ((driveState = DRIVE_READING or driveState = DRIVE_PLAYING) and internalStatus(6) = '1')) then	  
-                           -- Return NOT_READY (0x80)
-						   cmdPending              <= '0';
-						   errorResponseCmd_new    <= '1';	
-						   errorResponseCmd_error  <= x"01"; -- STAT_ERROR
-                           errorResponseCmd_reason <= x"80"; -- NOT_READY
-                        else
-						   cmdAck      <= '1';
-                           cmdPending  <= '0';
+                     
+                        -- CASE 1: PAUSE during SEEK (Parasite Eve II expects this to be accepted)
+                        if (driveState = DRIVE_SEEKLOGICAL or
+                            driveState = DRIVE_SEEKPHYSICAL or
+                            driveState = DRIVE_SEEKIMPLICIT) then
+                     
+                           cmdAck     <= '1';
+                           cmdPending <= '0';
+                     
                            working     <= '1';
                            workDelay   <= 7000 - 2;
                            workCommand <= nextCmd;
                            cmdResetXa  <= '1';
+                     
+                           -- cancel read/play after seek
+                           stop_afterseek <= '1';
+                     
+                        -- CASE 2: PAUSE during READ/PLAY but first sector NOT delivered yet
+                        -- (Duke Nukem / MiruMiru)
+                        elsif ((driveState = DRIVE_READING or driveState = DRIVE_PLAYING) and
+                               internalStatus(6) = '1') then
+                     
+                           -- Reject PAUSE: NOT_READY
+                           cmdPending              <= '0';
+                           errorResponseCmd_new    <= '1';
+                           errorResponseCmd_error  <= x"01"; -- STAT_ERROR
+                           errorResponseCmd_reason <= x"80"; -- NOT_READY
+                     
+                        -- CASE 3: Normal PAUSE
+                        else
+                     
+                           cmdAck     <= '1';
+                           cmdPending <= '0';
+                     
+                           working     <= '1';
+                           workDelay   <= 7000 - 2;
+                           workCommand <= nextCmd;
+                           cmdResetXa  <= '1';
+                     
                            if (driveState = DRIVE_READING or driveState = DRIVE_PLAYING) then
-                              -- Matches psx spx doc and DuckStation
                               if (modeReg(7) = '1') then
-                                 workDelay  <= 1066874 + driveDelay; -- value from psx spx doc
+                                 workDelay <= 1066874 + driveDelay;
                               else
-                                 workDelay  <= 2157295 + driveDelay; -- value from psx spx doc
+                                 workDelay <= 2157295 + driveDelay;
                               end if;
                            end if;
-                           if (driveState = DRIVE_SEEKLOGICAL or driveState = DRIVE_SEEKPHYSICAL or driveState = DRIVE_SEEKIMPLICIT) then
-                              -- todo: complete seek?
-                              stop_afterseek <= '1';
-                           else
-                              drive_stop <= '1';
-                           end if;
-					    end if;
+                     
+                           drive_stop <= '1';
+                     
+                        end if;
                      
                      when x"0A" => -- reset
                         if (working = '1' and workCommand = x"0A") then
