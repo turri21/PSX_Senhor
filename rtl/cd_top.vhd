@@ -1128,10 +1128,12 @@ begin
                            cmdResetXa  <= '1';
                      
                            if (driveState = DRIVE_READING or driveState = DRIVE_PLAYING) then
-                              if (modeReg(7) = '1') then
-                                 workDelay <= 1066874 + driveDelay;
+                              -- todo: should this be swapped between single speed and double speed? DuckStation has double speed longer and psx spx doc has single speed being longer
+                              -- attempting to change these values may cause problems in some sensitive games 
+							   if (modeReg(7) = '1') then
+                                 workDelay  <= 2157295 + driveDelay; -- value from psx spx doc
                               else
-                                 workDelay <= 2157295 + driveDelay;
+                                 workDelay  <= 1066874 + driveDelay; -- value from psx spx doc
                               end if;
                            end if;
                      
