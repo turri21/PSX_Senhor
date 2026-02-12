@@ -1104,6 +1104,8 @@ begin
                      
                            -- cancel read/play after seek
                            stop_afterseek <= '1';
+						   -- abort active seek operation
+						   drive_stop     <= '1';
                      
                         -- CASE 2: PAUSE during READ/PLAY but first sector NOT delivered yet
                         -- (Duke Nukem / MiruMiru)
