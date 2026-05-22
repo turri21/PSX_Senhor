@@ -1100,10 +1100,18 @@ begin
                            workCommand <= nextCmd;
                            cmdResetXa  <= '1';
                      
-                           -- cancel read/play after seek
-                           stop_afterseek <= '1';
-						   -- abort active seek operation
-						   drive_stop     <= '1';
+                           if (readAfterSeek = '1') then
+                              -- cancel pending read after seek - Parasite Eve II
+                              stop_afterseek <= '1';
+                              -- abort active seek operation - Vigilante 8
+                              drive_stop <= '1';
+                           elsif (playAfterSeek = '1') then
+                              -- keep pending play-after-seek alive for CDDA startup
+                              null;
+                           else
+                              -- abort pure seek operation
+                              drive_stop <= '1';
+                           end if;
                      
                         -- CASE 2: PAUSE during READ/PLAY but first sector NOT delivered yet
                         -- (Duke Nukem / MiruMiru)
