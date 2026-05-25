@@ -280,6 +280,7 @@ architecture arch of cd_top is
    signal phy_base                 : integer range 0 to 524287;
    signal phy_oldOffset            : integer range 0 to 31;
    signal phy_newOffset            : integer range 0 to 31;
+   signal phy_spt                  : integer range 8 to 22 := 8;
    
    -- sector fetch
    type tsectorFetch is
@@ -1733,6 +1734,8 @@ begin
    process(clk1x)
       variable skipreading     : std_logic;
       variable physicalLBANew  : integer range 0 to 524287;
+      variable phy_mm_v        : integer range 0 to 116;
+      variable phy_spt_v       : integer range 8 to 22;															
    begin
       if (rising_edge(clk1x)) then
 
@@ -2268,15 +2271,51 @@ begin
                      physicalUpdateState <= PHYSICALUPDATE_START;
                   end if;
             
-               when PHYSICALUPDATE_START =>
-                  physicalUpdateState <= PHYSICALUPDATE_CHECK;
-                  -- todo: if (!lastSectorHeaderValid) -> different base position and different sectors per track?
-                  -- todo: fixed 32 sectorPerTrack, should be 7.0f + 2.811844405f * std::log((float)(currentLBA / 4500) + 1);
-                  if (currentlba < 32) then
-                     phy_base <= currentlba;
-                  else
-                     phy_base <= currentlba - 31;
-                  end if;
+            when PHYSICALUPDATE_START =>
+               physicalUpdateState <= PHYSICALUPDATE_CHECK;
+
+               -- rama PSX mech SPT table
+               phy_mm_v := currentLBA / FRAMES_PER_MINUTE;
+
+               if (phy_mm_v = 0) then
+                  phy_spt_v := 8;
+               elsif (phy_mm_v <= 4) then
+                  phy_spt_v := 9;
+               elsif (phy_mm_v <= 7) then
+                  phy_spt_v := 10;
+               elsif (phy_mm_v <= 11) then
+                  phy_spt_v := 11;
+               elsif (phy_mm_v <= 16) then
+                  phy_spt_v := 12;
+               elsif (phy_mm_v <= 23) then
+                  phy_spt_v := 13;
+               elsif (phy_mm_v <= 27) then
+                  phy_spt_v := 14;
+               elsif (phy_mm_v <= 32) then
+                  phy_spt_v := 15;
+               elsif (phy_mm_v <= 39) then
+                  phy_spt_v := 16;
+               elsif (phy_mm_v <= 44) then
+                  phy_spt_v := 17;
+               elsif (phy_mm_v <= 52) then
+                  phy_spt_v := 18;
+               elsif (phy_mm_v <= 60) then
+                  phy_spt_v := 19;
+               elsif (phy_mm_v <= 67) then
+                  phy_spt_v := 20;
+               elsif (phy_mm_v <= 74) then
+                  phy_spt_v := 21;
+               else
+                  phy_spt_v := 22;
+               end if;
+
+               phy_spt <= phy_spt_v;
+
+               if (currentLBA < phy_spt_v) then
+                  phy_base <= currentLBA;
+               else
+                  phy_base <= currentLBA - (phy_spt_v - 1);
+               end if;
                   
                when PHYSICALUPDATE_CHECK =>
                   physicalUpdateState <= PHYSICALUPDATE_CALC1;
@@ -2290,7 +2329,7 @@ begin
                   
                when PHYSICALUPDATE_CALC2 =>  
                   physicalUpdateState <= PHYSICALUPDATE_CALCDONE;
-                  phy_newOffset <= (phy_oldOffset + 1) mod 32;
+                  phy_newOffset <= (phy_oldOffset + 1) mod phy_spt;
             
                when PHYSICALUPDATE_CALCDONE =>
                   physicalLBANew := phy_base + phy_newOffset;
