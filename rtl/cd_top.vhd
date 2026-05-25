@@ -1108,9 +1108,6 @@ begin
                            elsif (playAfterSeek = '1') then
                               -- keep pending play-after-seek alive for CDDA startup
                               null;
-                           else
-                              -- abort pure seek operation
-                              drive_stop <= '1';
                            end if;
                      
                         -- CASE 2: PAUSE during READ/PLAY but first sector NOT delivered yet
