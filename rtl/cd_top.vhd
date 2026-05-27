@@ -233,7 +233,7 @@ architecture arch of cd_top is
    signal seekLBA                   : integer range 0 to 524287; 
    signal playLBA                   : integer range 0 to 524287; 
    signal diffLBA                   : integer range 0 to 524287; 
-   signal seekTimeMul               : integer range 0 to 127; 
+   signal seekTimeMul               : integer range 0 to 274; 
    signal currentTrackBCD           : std_logic_vector(7 downto 0);
    signal nextTrack                 : std_logic_vector(7 downto 0);
    
@@ -2078,10 +2078,22 @@ begin
                   seekTimeMul <= 5 + diffLBA / 8; -- 5 .. 14
                elsif (diffLBA < 4500) then
                   seekTimeMul <= 14 + diffLBA / 256; -- 14 .. 31
+            
+               elsif (diffLBA < 250000) then
+                  seekTimeMul <= 31 + diffLBA / 8192; -- 31 .. 73            
                else
-                  seekTimeMul <= 31 + diffLBA / 8192; -- 31 .. 73
+                  -- extreme sled seek only when starting from inner position after Stop
+                  if (currentLBA = 0) then
+                     if (modeReg(7) = '1') then
+                        seekTimeMul <= 274;
+                     else
+                        seekTimeMul <= 137;
+                     end if;
+                  else
+                     seekTimeMul <= 31 + diffLBA / 8192;
+                  end if;
                end if;
-                  
+			   
             end if;
             
             if (addSeekTime = '1') then
@@ -2212,6 +2224,7 @@ begin
                driveBusy                  <= '0';
                internalStatus(7 downto 5) <= "000"; -- ClearActiveBits
                internalStatus(1)          <= '0';   --motor off
+			   currentLBA                 <= 0;
             end if;
             
             if (drive_stop = '1') then
