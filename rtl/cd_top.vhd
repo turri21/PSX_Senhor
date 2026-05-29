@@ -2893,17 +2893,30 @@ begin
             
                when COPY_IDLE =>
                   if (copyData = '1' and ce = '1') then
-                     copyState         <= COPY_FIRST;
+               
+                     copySectorPointer <= readSectorPointer;
                      copyCount         <= 0;
                      copyReadAddr      <= 0;
                      copyByteCnt       <= 0;
-                     copySectorPointer <= readSectorPointer;
-                     sectorBufferSizes(to_integer(readSectorPointer)) <= 0;
-                     if (sectorBufferSizes(to_integer(readSectorPointer)) = 0) then
-                        copySize <= RAW_SECTOR_OUTPUT_SIZE / 4;
-                     else
+               
+                     if (sectorBufferSizes(to_integer(readSectorPointer)) /= 0) then
                         copySize <= sectorBufferSizes(to_integer(readSectorPointer));
+                        sectorBufferSizes(to_integer(readSectorPointer)) <= 0;
+                        copyState <= COPY_FIRST;
+               
+                     elsif (
+                        sectorBufferSizes = (others => 0) and
+                        modeReg(5) = '0' and
+                        driveState = DRIVE_READING
+                     ) then
+                        -- MiruMiru: data read, drive really reading, empty buffer -> wait
+                        null;
+               
+                     else
+                        copySize  <= RAW_SECTOR_OUTPUT_SIZE / 4;
+                        copyState <= COPY_FIRST;
                      end if;
+               
                   end if;
                
                when COPY_FIRST =>
