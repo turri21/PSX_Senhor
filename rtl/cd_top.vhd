@@ -233,7 +233,7 @@ architecture arch of cd_top is
    signal seekLBA                   : integer range 0 to 524287; 
    signal playLBA                   : integer range 0 to 524287; 
    signal diffLBA                   : integer range 0 to 524287; 
-   signal seekTimeMul               : integer range 0 to 274; 
+   signal seekTimeMul               : integer range 0 to 137; 
    signal currentTrackBCD           : std_logic_vector(7 downto 0);
    signal nextTrack                 : std_logic_vector(7 downto 0);
    
@@ -2084,11 +2084,7 @@ begin
                else
                   -- extreme sled seek only when starting from inner position after Stop
                   if (currentLBA = 0) then
-                     if (modeReg(7) = '1') then
-                        seekTimeMul <= 274;
-                     else
-                        seekTimeMul <= 137;
-                     end if;
+                     seekTimeMul <= 137;
                   else
                      seekTimeMul <= 31 + diffLBA / 8192;
                   end if;
