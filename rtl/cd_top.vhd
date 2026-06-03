@@ -264,6 +264,7 @@ architecture arch of cd_top is
    signal clearSectorBuffers        : std_logic := '0';  
    signal writeSectorPointer        : unsigned(2 downto 0) := (others => '0');
    signal readSectorPointer         : unsigned(2 downto 0) := (others => '0');
+   signal firstSectorPending        : std_logic := '0';
    
    type tphysicalUpdateState is
    (
@@ -589,8 +590,12 @@ begin
                            
                            when x"3" =>
                               if (bus_dataWrite(7) = '1') then
-                                 if (FifoData_Empty = '1') then -- don't do anything when data still inside?
-                                    copyData <= '1';
+                                 if (FifoData_Empty = '1') then
+                           
+                                    if (firstSectorPending = '0') then
+                                       copyData <= '1';
+                                    end if;
+                           
                                  end if;
                               else
                                  FifoData_reset <= '1';
@@ -2819,6 +2824,7 @@ begin
                      --error <= '1';
                   end if;
                   sectorBufferSizes(to_integer(writeSectorPointer)) <= procSize;
+				  firstSectorPending <= '0';
                
                when SPROC_DATA =>
                   procCount    <= procCount + 1;
@@ -2889,30 +2895,17 @@ begin
             
                when COPY_IDLE =>
                   if (copyData = '1' and ce = '1') then
-               
-                     copySectorPointer <= readSectorPointer;
+                     copyState         <= COPY_FIRST;
                      copyCount         <= 0;
                      copyReadAddr      <= 0;
                      copyByteCnt       <= 0;
-               
-                     if (sectorBufferSizes(to_integer(readSectorPointer)) /= 0) then
-                        copySize <= sectorBufferSizes(to_integer(readSectorPointer));
-                        sectorBufferSizes(to_integer(readSectorPointer)) <= 0;
-                        copyState <= COPY_FIRST;
-               
-                     elsif (
-                        sectorBufferSizes = (others => 0) and
-                        modeReg(5) = '0' and
-                        driveState = DRIVE_READING
-                     ) then
-                        -- MiruMiru: data read, drive really reading, empty buffer -> wait
-                        null;
-               
+                     copySectorPointer <= readSectorPointer;
+                     sectorBufferSizes(to_integer(readSectorPointer)) <= 0;
+                     if (sectorBufferSizes(to_integer(readSectorPointer)) = 0) then
+                        copySize <= RAW_SECTOR_OUTPUT_SIZE / 4;
                      else
-                        copySize  <= RAW_SECTOR_OUTPUT_SIZE / 4;
-                        copyState <= COPY_FIRST;
+                        copySize <= sectorBufferSizes(to_integer(readSectorPointer));
                      end if;
-               
                   end if;
                
                when COPY_FIRST =>
@@ -2950,13 +2943,17 @@ begin
             end case;
             
             -- if data fifo is reset while copy is still ongoing, stop copy immidiatly so fifo stays empty
-            if (FifoData_reset = '1' and copyState /= COPY_IDLE) then
-               copyState   <= COPY_IDLE;
-               FifoData_Wr <= '0';
+            if (FifoData_reset = '1') then            
+               firstSectorPending <= '0';            
+               if (copyState /= COPY_IDLE) then
+                  copyState   <= COPY_IDLE;
+                  FifoData_Wr <= '0';
+               end if;            
             end if;
             
             if (clearSectorBuffers = '1') then
                sectorBufferSizes <= (others => 0);
+			   firstSectorPending <= '1';
             end if;
 
          end if;
